@@ -685,6 +685,10 @@ Multi interface can be used to configure sub-interfaces individually.
   # Serial port for the device
   port = /dev/ttyACM0
 
+  # Enable compatibility with RNode_Firmware_CE
+  # MultiInterface command framing.
+  # ce_compat = yes
+
   # You can configure the RNode to send
   # out identification on the channel with
   # a set interval by configuring the
