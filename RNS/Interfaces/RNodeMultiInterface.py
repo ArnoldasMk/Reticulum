@@ -75,6 +75,7 @@ class KISS():
     CMD_ROM_READ    = 0x51
     CMD_RESET       = 0x55
     CMD_INTERFACES  = 0x71
+    CMD_INTERFACES_CE = 0x64
 
     CMD_INT0_DATA   = 0x00
     CMD_INT1_DATA   = 0x10
@@ -225,6 +226,7 @@ class RNodeMultiInterface(Interface):
 
         id_interval = int(c["id_interval"]) if "id_interval" in c else None
         id_callsign = c["id_callsign"] if "id_callsign" in c else None
+        ce_compat = c.as_bool("ce_compat") if "ce_compat" in c else False
         port = c["port"] if "port" in c else None
         
         if port == None:
@@ -239,6 +241,7 @@ class RNodeMultiInterface(Interface):
         self.owner       = owner
         self.name        = name
         self.port        = port
+        self.interfaces_cmd = KISS.CMD_INTERFACES_CE if ce_compat else KISS.CMD_INTERFACES
         self.speed       = 115200
         self.databits    = 8
         self.stopbits    = 1
@@ -387,7 +390,7 @@ class RNodeMultiInterface(Interface):
         self.online = True
 
     def detect(self):
-        kiss_command = bytes([KISS.FEND, KISS.CMD_DETECT, KISS.DETECT_REQ, KISS.FEND, KISS.CMD_FW_VERSION, 0x00, KISS.FEND, KISS.CMD_PLATFORM, 0x00, KISS.FEND, KISS.CMD_MCU, 0x00, KISS.FEND, KISS.CMD_INTERFACES, 0x00, KISS.FEND])
+        kiss_command = bytes([KISS.FEND, KISS.CMD_DETECT, KISS.DETECT_REQ, KISS.FEND, KISS.CMD_FW_VERSION, 0x00, KISS.FEND, KISS.CMD_PLATFORM, 0x00, KISS.FEND, KISS.CMD_MCU, 0x00, KISS.FEND, self.interfaces_cmd, 0x00, KISS.FEND])
         written = self.serial.write(kiss_command)
         if written != len(kiss_command):
             raise IOError("An IO error occurred while detecting hardware for "+str(self))
@@ -841,7 +844,7 @@ class RNodeMultiInterface(Interface):
                                 self.detected = True
                             else:
                                 self.detected = False
-                        elif (command == KISS.CMD_INTERFACES):
+                        elif (command == self.interfaces_cmd):
                             command_buffer = command_buffer+bytes([byte])
                             if (len(command_buffer) == 2):
                                 # add the interface to the back of the list, they're all given from vport 0 and up in order
